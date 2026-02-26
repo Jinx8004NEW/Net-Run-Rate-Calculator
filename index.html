@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>NRR Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  /* ══ THEMES ══ */
+  [data-theme="dark"] {
+    --bg:      #080e0a;
+    --surf:    #0f1a12;
+    --surf2:   #142018;
+    --bdr:     #1e3325;
+    --acc:     #4dff6e;
+    --acc2:    #ff4d5e;
+    --acc3:    #ffd740;
+    --acc4:    #5de0b3;
+    --txt:     #d6eed9;
+    --muted:   #4a7055;
+    --lbl:     #7ab88a;
+    --grid:    rgba(77,255,110,0.035);
+    --inp:     #080e0a;
+    --shadow:  rgba(0,0,0,0.55);
+    --glow:    rgba(77,255,110,0.18);
+  }
+  [data-theme="light"] {
+    --bg:      #f0f5f1;
+    --surf:    #ffffff;
+    --surf2:   #e6f0e8;
+    --bdr:     #bdd4c2;
+    --acc:     #1a8c35;
+    --acc2:    #d42b2b;
+    --acc3:    #c47a00;
+    --acc4:    #0e7a63;
+    --txt:     #172a1c;
+    --muted:   #537a5c;
+    --lbl:     #2a5e38;
+    --grid:    rgba(26,140,53,0.05);
+    --inp:     #ffffff;
+    --shadow:  rgba(0,0,0,0.07);
+    --glow:    rgba(26,140,53,0.12);
+  }
+
+  /* ══ RESET ══ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    background: var(--bg); color: var(--txt);
+    font-family: 'Barlow', sans-serif; font-weight: 300;
+    min-height: 100vh; overflow-x: hidden;
+    transition: background 0.3s, color 0.3s;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: linear-gradient(var(--grid) 1px,transparent 1px), linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size: 36px 36px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 28px 16px 72px; position: relative; z-index: 1; }
+
+  /* ══ HEADER ══ */
+  header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-bottom: 22px; margin-bottom: 24px; border-bottom: 1px solid var(--bdr); }
+  .header-left { flex: 1; min-width: 0; }
+  .eyebrow { font-size: 10px; letter-spacing: 0.32em; color: var(--acc); text-transform: uppercase; margin-bottom: 4px; }
+  h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(46px, 12vw, 82px); line-height: 0.88; letter-spacing: 0.02em; color: var(--txt); }
+  h1 span { color: var(--acc); display: block; }
+
+  .theme-toggle {
+    flex-shrink: 0; background: var(--surf); border: 1px solid var(--bdr); border-radius: 50px;
+    padding: 7px 14px; cursor: pointer; display: flex; align-items: center; gap: 7px;
+    font-family: 'Barlow', sans-serif; font-size: 11px; font-weight: 400; letter-spacing: 0.1em;
+    color: var(--muted); transition: all 0.2s; white-space: nowrap;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  }
+  .theme-toggle:hover { border-color: var(--acc); color: var(--acc); }
+  .theme-toggle:active { opacity: 0.7; }
+  .ti { font-size: 15px; }
+
+  /* ══ INFO ══ */
+  .info-banner {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: rgba(77,255,110,0.04); border: 1px solid var(--bdr); border-radius: 10px;
+    padding: 12px 15px; margin-bottom: 20px; font-size: 12px; color: var(--muted); line-height: 1.75;
+  }
+  [data-theme="light"] .info-banner { background: rgba(26,140,53,0.04); }
+  .info-icon { font-size: 17px; flex-shrink: 0; }
+
+  /* ══ QUOTA ══ */
+  .quota-bar {
+    background: var(--surf); border: 1px solid var(--bdr); border-radius: 10px;
+    padding: 14px 18px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .qbar-lbl { font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 0.1em; color: var(--lbl); flex: 1; min-width: 130px; }
+  .qbar-lbl small { display: block; font-family: 'Barlow', sans-serif; font-size: 10px; font-weight: 300; color: var(--muted); margin-top: 1px; }
+  .qpills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .qpill {
+    font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.08em;
+    padding: 6px 15px; border-radius: 50px; border: 1px solid var(--bdr);
+    background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent; min-height: 36px;
+  }
+  .qpill.on { background: var(--acc); border-color: var(--acc); color: var(--bg); font-weight: 600; }
+  .qpill:hover:not(.on) { border-color: var(--acc); color: var(--acc); }
+  .qpill:active { opacity: 0.7; }
+  .qcustom { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .qcustom input { width: 52px !important; text-align: center; padding: 5px 4px !important; font-size: 13px !important; min-height: 36px; }
+
+  /* ══ SECTION DIVIDER ══ */
+  .sdiv {
+    font-family: 'Bebas Neue', sans-serif; font-size: 11px; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--muted);
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+  .sdiv::after { content: ''; flex: 1; height: 1px; background: var(--bdr); }
+
+  /* ══ MATCH CARD ══ */
+  .match-card {
+    background: var(--surf); border: 1px solid var(--bdr); border-radius: 12px;
+    padding: 18px; margin-bottom: 20px; animation: fadeUp 0.25s ease;
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+  .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .tblock {
+    background: var(--surf2); border: 1px solid var(--bdr); border-radius: 9px;
+    padding: 14px 15px; transition: border-color 0.2s;
+  }
+  .tblock:focus-within { border-color: var(--acc); }
+  .ttop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .ttitle { font-family: 'Bebas Neue', sans-serif; font-size: 19px; letter-spacing: 0.08em; color: var(--txt); display: flex; align-items: center; gap: 7px; }
+  .tdot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .da { background: var(--acc); }
+  .db { background: var(--acc3); }
+
+  .ao-wrap { display: flex; align-items: center; gap: 5px; }
+  .ao-lbl { font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  .wbtn {
+    width: 36px; height: 36px; border-radius: 7px; border: 1px solid var(--bdr);
+    background: var(--inp); color: var(--muted);
+    font-family: 'Bebas Neue', sans-serif; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent; flex-shrink: 0;
+  }
+  .wbtn.on { background: rgba(255,77,94,0.13); border-color: var(--acc2); color: var(--acc2); }
+  .wbtn:hover:not(.on) { border-color: var(--acc); color: var(--acc); }
+  .wbtn:active { opacity: 0.7; }
+
+  /* ══ FIELDS ══ */
+  .fg { margin-bottom: 9px; }
+  .fg:last-child { margin-bottom: 0; }
+  .fg label { display: block; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--lbl); margin-bottom: 4px; font-weight: 400; }
+  input[type="number"] {
+    width: 100%; background: var(--inp); border: 1px solid var(--bdr); border-radius: 6px;
+    color: var(--txt); font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 400;
+    padding: 10px 12px; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    -moz-appearance: textfield; min-height: 44px;
+  }
+  input::-webkit-inner-spin-button, input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input:focus { border-color: var(--acc); box-shadow: 0 0 0 3px var(--glow); }
+  input.dis { opacity: 0.38; cursor: not-allowed; pointer-events: none; }
+  .ao-note { font-size: 10px; color: var(--acc2); font-style: italic; margin-top: 4px; display: none; line-height: 1.4; }
+
+  /* ══ BUTTONS ══ */
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 36px; }
+  .btn {
+    font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.1em;
+    padding: 13px 28px; border-radius: 7px; border: none; cursor: pointer; transition: all 0.15s;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent; min-height: 48px;
+  }
+  .btn:active { opacity: 0.75; transform: scale(0.98); }
+  .btn-calc { background: transparent; border: 2px solid var(--acc); color: var(--acc); font-size: 17px; padding: 13px 36px; flex: 1; min-width: 160px; }
+  .btn-calc:hover { background: var(--acc); color: var(--bg); box-shadow: 0 6px 20px var(--glow); }
+  .btn-reset { background: transparent; border: 1px solid var(--bdr); color: var(--muted); min-width: 90px; }
+  .btn-reset:hover { border-color: var(--acc2); color: var(--acc2); }
+
+  /* ══ ERROR ══ */
+  .errmsg { color: var(--acc2); font-size: 13px; margin-bottom: 14px; padding: 11px 14px; background: rgba(255,77,94,0.07); border: 1px solid rgba(255,77,94,0.22); border-radius: 7px; display: none; line-height: 1.5; }
+
+  /* ══ RESULTS ══ */
+  #result { display: none; animation: fadeUp 0.35s ease; }
+  .res-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.08em; color: var(--lbl); margin-bottom: 14px; }
+
+  .nrr-card { background: var(--surf); border: 1px solid var(--bdr); border-radius: 12px; overflow: hidden; margin-bottom: 14px; box-shadow: 0 4px 24px var(--shadow); }
+  .nrr-head { padding: 12px 18px; background: var(--surf2); border-bottom: 1px solid var(--bdr); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .nrr-htitle { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.12em; color: var(--muted); }
+  .vpill { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 10px; border-radius: 50px; border: 1px solid; }
+
+  .nrr-big { text-align: center; padding: 24px 16px 18px; }
+  .nrr-num { font-family: 'Bebas Neue', sans-serif; font-size: clamp(58px, 16vw, 100px); line-height: 1; letter-spacing: 0.02em; margin-bottom: 4px; transition: color 0.3s; }
+  .nrr-num.pos { color: var(--acc); }
+  .nrr-num.neg { color: var(--acc2); }
+  .nrr-num.neu { color: var(--acc3); }
+  .nrr-sub { font-size: 9px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--muted); }
+
+  .sgrid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--bdr); border-top: 1px solid var(--bdr); }
+  .scell { background: var(--surf); padding: 11px 14px; }
+  .scell-l { font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .scell-v { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.04em; color: var(--txt); word-break: break-all; }
+
+  .cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .ccard { background: var(--surf); border: 1px solid var(--bdr); border-radius: 10px; overflow: hidden; }
+  .chead { padding: 9px 15px; background: var(--surf2); border-bottom: 1px solid var(--bdr); display: flex; align-items: center; gap: 7px; }
+  .chtitle { font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 0.07em; color: var(--txt); }
+  .cbody { padding: 14px 15px; }
+  .crow { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 9px; margin-bottom: 9px; border-bottom: 1px dashed var(--bdr); }
+  .crow:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .clbl { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .cval { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.04em; }
+  .cval.pos { color: var(--acc); }
+  .cval.neg { color: var(--acc2); }
+  .cval.neu { color: var(--acc3); }
+
+  .formula { background: var(--surf2); border: 1px solid var(--bdr); border-radius: 9px; padding: 14px 16px; font-size: 12px; color: var(--muted); line-height: 1.9; }
+  .formula strong { color: var(--txt); font-weight: 600; }
+  .feq { font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 0.04em; color: var(--lbl); margin-top: 4px; line-height: 1.7; }
+
+  /* ══ RESPONSIVE ══ */
+  @media (max-width: 680px) {
+    .qbar-lbl { min-width: 100%; }
+    .qpills { flex: 1; }
+  }
+  @media (max-width: 520px) {
+    .wrap { padding: 16px 12px 56px; }
+    h1 { font-size: clamp(44px, 13vw, 64px); }
+    .theme-toggle span:not(.ti) { display: none; }
+    .theme-toggle { padding: 7px 10px; }
+    .match-grid { grid-template-columns: 1fr; gap: 10px; }
+    .sgrid { grid-template-columns: repeat(2,1fr); }
+    .cgrid { grid-template-columns: 1fr; gap: 10px; }
+    .btn-calc { font-size: 15px; padding: 13px 20px; }
+    .nrr-num { font-size: clamp(52px, 18vw, 80px); }
+  }
+  @media (max-width: 380px) {
+    h1 { font-size: 40px; }
+    .btn-row { flex-direction: column; }
+    .btn-calc, .btn-reset { width: 100%; min-width: unset; }
+    .scell-v { font-size: 15px; }
+    .cval { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="header-left">
+      <div class="eyebrow">Cricket Analytics Tool</div>
+      <h1>Net Run<span>Rate</span></h1>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span class="ti" id="t-icon">🌙</span>
+      <span id="t-lbl">Dark Mode</span>
+    </button>
+  </header>
+
+  <div class="info-banner">
+    <span class="info-icon">🏏</span>
+    <span>Overs use cricket notation — <strong style="color:var(--txt)">18.4</strong> = 18 overs 4 balls. Toggle <strong style="color:var(--acc2)">W</strong> if a team was bowled out — overs auto-fill to quota. Overs faced <strong style="color:var(--txt)">cannot exceed</strong> the selected quota.</span>
+  </div>
+
+  <div class="quota-bar">
+    <div class="qbar-lbl">Match Format / Quota Overs <small>Applies to both innings</small></div>
+    <div class="qpills">
+      <button class="qpill" onclick="setQ(10,this)">T10</button>
+      <button class="qpill on" onclick="setQ(20,this)">T20</button>
+      <button class="qpill" onclick="setQ(50,this)">ODI</button>
+    </div>
+    <div class="qcustom">
+      <span>Custom:</span>
+      <input type="number" id="qc" min="1" max="90" placeholder="—" oninput="setQC(this.value)" inputmode="numeric">
+      <span>overs</span>
+    </div>
+  </div>
+
+  <div class="sdiv">This Match</div>
+
+  <div class="match-card">
+    <div class="match-grid">
+      <div class="tblock">
+        <div class="ttop">
+          <div class="ttitle"><span class="tdot da"></span>Team A</div>
+          <div class="ao-wrap">
+            <span class="ao-lbl">All Out</span>
+            <button class="wbtn" id="ao-a" onclick="toggleAO('a')">W</button>
+          </div>
+        </div>
+        <div class="fg">
+          <label>Runs Scored</label>
+          <input type="number" id="rs-a" min="0" placeholder="e.g. 172" inputmode="numeric">
+        </div>
+        <div class="fg">
+          <label>Overs Faced</label>
+          <input type="number" id="of-a" min="0" step="0.1" placeholder="e.g. 18.4" inputmode="decimal" oninput="validateOversInput(this)">
+          <div class="ao-note" id="note-a"></div>
+        </div>
+      </div>
+      <div class="tblock">
+        <div class="ttop">
+          <div class="ttitle"><span class="tdot db"></span>Team B</div>
+          <div class="ao-wrap">
+            <span class="ao-lbl">All Out</span>
+            <button class="wbtn" id="ao-b" onclick="toggleAO('b')">W</button>
+          </div>
+        </div>
+        <div class="fg">
+          <label>Runs Scored</label>
+          <input type="number" id="rs-b" min="0" placeholder="e.g. 145" inputmode="numeric">
+        </div>
+        <div class="fg">
+          <label>Overs Faced</label>
+          <input type="number" id="of-b" min="0" step="0.1" placeholder="e.g. 20.0" inputmode="decimal" oninput="validateOversInput(this)">
+          <div class="ao-note" id="note-b"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="errmsg" id="err"></div>
+
+  <div class="btn-row">
+    <button class="btn btn-calc" onclick="calc()">Calculate NRR</button>
+    <button class="btn btn-reset" onclick="resetAll()">Reset</button>
+  </div>
+
+  <div id="result">
+    <div class="res-title">Match Result</div>
+    <div class="nrr-card">
+      <div class="nrr-head">
+        <span class="nrr-htitle">NRR — Team A's Perspective</span>
+        <span class="vpill" id="verdict"></span>
+      </div>
+      <div class="nrr-big">
+        <div class="nrr-num" id="nrr-num">+0.000</div>
+        <div class="nrr-sub">Net Run Rate</div>
+      </div>
+      <div class="sgrid">
+        <div class="scell"><div class="scell-l">Team A Runs</div><div class="scell-v" id="s-rs-a">—</div></div>
+        <div class="scell"><div class="scell-l">Team A Overs</div><div class="scell-v" id="s-of-a">—</div></div>
+        <div class="scell"><div class="scell-l">Team A RPO</div><div class="scell-v" id="s-rpo-a">—</div></div>
+        <div class="scell"><div class="scell-l">Team B Runs</div><div class="scell-v" id="s-rs-b">—</div></div>
+        <div class="scell"><div class="scell-l">Team B Overs</div><div class="scell-v" id="s-of-b">—</div></div>
+        <div class="scell"><div class="scell-l">Team B RPO</div><div class="scell-v" id="s-rpo-b">—</div></div>
+      </div>
+    </div>
+    <div class="cgrid">
+      <div class="ccard">
+        <div class="chead"><span class="tdot da"></span><span class="chtitle">Team A NRR</span></div>
+        <div class="cbody">
+          <div class="crow"><span class="clbl">Scored RPO</span><span class="cval" id="c-rpo-a">—</span></div>
+          <div class="crow"><span class="clbl">Conceded RPO</span><span class="cval" id="c-rpo-ab">—</span></div>
+          <div class="crow"><span class="clbl">Match NRR</span><span class="cval" id="c-nrr-a">—</span></div>
+        </div>
+      </div>
+      <div class="ccard">
+        <div class="chead"><span class="tdot db"></span><span class="chtitle">Team B NRR</span></div>
+        <div class="cbody">
+          <div class="crow"><span class="clbl">Scored RPO</span><span class="cval" id="c-rpo-b">—</span></div>
+          <div class="crow"><span class="clbl">Conceded RPO</span><span class="cval" id="c-rpo-ba">—</span></div>
+          <div class="crow"><span class="clbl">Match NRR</span><span class="cval" id="c-nrr-b">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="formula" id="fbox"></div>
+  </div>
+
+</div>
+
+
+
+<script>
+  let quota = 20, aoA = false, aoB = false;
+
+  // ── THEME ──
+  function toggleTheme() {
+    const d = document.documentElement, dark = d.getAttribute('data-theme') === 'dark';
+    d.setAttribute('data-theme', dark ? 'light' : 'dark');
+    document.getElementById('t-icon').textContent = dark ? '☀️' : '🌙';
+    document.getElementById('t-lbl').textContent  = dark ? 'Light Mode' : 'Dark Mode';
+  }
+
+  // ── QUOTA ──
+  function setQ(v, btn) {
+    quota = v;
+    document.querySelectorAll('.qpill').forEach(p => p.classList.remove('on'));
+    btn && btn.classList.add('on');
+    document.getElementById('qc').value = '';
+    onQuotaChange();
+  }
+  function setQC(v) {
+    const n = parseFloat(v);
+    if (!isNaN(n) && n > 0) {
+      quota = n;
+      document.querySelectorAll('.qpill').forEach(p => p.classList.remove('on'));
+      onQuotaChange();
+    }
+  }
+
+  // Called whenever quota changes — update all-out fields + update max attributes
+  function onQuotaChange() {
+    if (aoA) { document.getElementById('of-a').value = quota; document.getElementById('note-a').textContent = `Full quota: ${quota} overs`; }
+    if (aoB) { document.getElementById('of-b').value = quota; document.getElementById('note-b').textContent = `Full quota: ${quota} overs`; }
+    document.getElementById('of-a').setAttribute('max', quota);
+    document.getElementById('of-b').setAttribute('max', quota);
+    hideErr();
+  }
+
+  // Validate balls digit live (overs like 18.6 are invalid in cricket)
+  function validateOversInput(inp) {
+    const raw = inp.value.trim();
+    if (!raw) { inp.style.borderColor = ''; return; }
+    const parts = raw.split('.');
+    if (parts.length > 1) {
+      const balls = parseInt(parts[1]);
+      if (!isNaN(balls) && balls > 5) {
+        inp.style.borderColor = 'var(--acc2)';
+      } else {
+        inp.style.borderColor = '';
+      }
+    } else {
+      inp.style.borderColor = '';
+    }
+  }
+
+  // ── ALL OUT ──
+  function toggleAO(t) {
+    if (t === 'a') { aoA = !aoA; applyAO('ao-a', 'of-a', 'note-a', aoA); }
+    else           { aoB = !aoB; applyAO('ao-b', 'of-b', 'note-b', aoB); }
+  }
+  function applyAO(bid, iid, nid, on) {
+    document.getElementById(bid).classList.toggle('on', on);
+    const inp = document.getElementById(iid), note = document.getElementById(nid);
+    if (on) {
+      inp.value = quota;
+      inp.classList.add('dis');
+      inp.style.borderColor = '';
+      note.style.display = 'block';
+      note.textContent = `Full quota: ${quota} overs`;
+    } else {
+      inp.value = '';
+      inp.classList.remove('dis');
+      note.style.display = 'none';
+    }
+  }
+
+  // ── PARSE OVERS (cricket notation) ──
+  // e.g. 18.4 = 18 overs 4 balls = 18.667 decimal
+  function parseOv(v) {
+    if (v === '' || v == null) return null;
+    const s = String(v).trim();
+    if (!s) return null;
+    const p = s.split('.');
+    const ov = parseInt(p[0]) || 0;
+    const bl = p.length > 1 ? parseInt(p[1]) || 0 : 0;
+    if (bl > 5) return null; // invalid ball digit
+    return ov + bl / 6;
+  }
+
+  // Format overs back to cricket notation (e.g. 18.667 → "18.4")
+  function fmtOvers(decOv) {
+    const ov = Math.floor(decOv);
+    const bl = Math.round((decOv - ov) * 6);
+    return bl === 0 ? `${ov}.0` : `${ov}.${bl}`;
+  }
+
+  function sf(n, d=3) { return (n >= 0 ? '+' : '') + n.toFixed(d); }
+  function pl(n, d=3) { return n.toFixed(d); }
+  function nc(n)  { return n > 0.001 ? 'pos' : n < -0.001 ? 'neg' : 'neu'; }
+  function col(n) { return n > 0.001 ? 'var(--acc)' : n < -0.001 ? 'var(--acc2)' : 'var(--acc3)'; }
+
+  function showErr(m) { const e = document.getElementById('err'); e.textContent = m; e.style.display = 'block'; e.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  function hideErr()  { document.getElementById('err').style.display = 'none'; }
+  function cv(id, val, cls) { const e = document.getElementById(id); e.textContent = val; e.className = 'cval ' + cls; }
+
+  // ── CALCULATE ──
+  function calc() {
+    hideErr();
+
+    const rsAv = document.getElementById('rs-a').value.trim();
+    const rsBv = document.getElementById('rs-b').value.trim();
+    const ofAr = document.getElementById('of-a').value.trim();
+    const ofBr = document.getElementById('of-b').value.trim();
+
+    // — Runs validation —
+    if (!rsAv) return showErr('Please enter runs scored by Team A.');
+    if (!rsBv) return showErr('Please enter runs scored by Team B.');
+    const rsA = parseFloat(rsAv), rsB = parseFloat(rsBv);
+    if (isNaN(rsA) || rsA < 0)  return showErr('Runs for Team A must be a positive number.');
+    if (isNaN(rsB) || rsB < 0)  return showErr('Runs for Team B must be a positive number.');
+    if (!Number.isInteger(rsA)) return showErr('Runs must be whole numbers (no decimals) for Team A.');
+    if (!Number.isInteger(rsB)) return showErr('Runs must be whole numbers (no decimals) for Team B.');
+
+    // — Overs validation —
+    if (!aoA && !ofAr) return showErr('Enter overs faced by Team A, or toggle All Out (W).');
+    if (!aoB && !ofBr) return showErr('Enter overs faced by Team B, or toggle All Out (W).');
+
+    const ofA = aoA ? quota : parseOv(ofAr);
+    const ofB = aoB ? quota : parseOv(ofBr);
+
+    if (ofA === null || ofA <= 0) return showErr('Invalid overs for Team A — balls digit must be 0–5 (e.g. 18.4).');
+    if (ofB === null || ofB <= 0) return showErr('Invalid overs for Team B — balls digit must be 0–5 (e.g. 20.0).');
+
+    // — Quota cap check —
+    if (ofA > quota + 0.001) return showErr(`Team A overs (${fmtOvers(ofA)}) cannot exceed the quota of ${quota} overs.`);
+    if (ofB > quota + 0.001) return showErr(`Team B overs (${fmtOvers(ofB)}) cannot exceed the quota of ${quota} overs.`);
+
+    const rpoAs = rsA / ofA, rpoAc = rsB / ofB;
+    const nrrA = rpoAs - rpoAc, nrrB = -nrrA;
+
+    // ── Render ──
+    const el = document.getElementById('nrr-num');
+    el.textContent = sf(nrrA); el.className = 'nrr-num ' + nc(nrrA);
+
+    const vEl = document.getElementById('verdict');
+    if      (nrrA >  0.001) { vEl.textContent = '▲ Team A Wins'; vEl.style.cssText = 'color:var(--acc);border-color:var(--acc);background:rgba(77,255,110,0.08)'; }
+    else if (nrrA < -0.001) { vEl.textContent = '▼ Team B Wins'; vEl.style.cssText = 'color:var(--acc2);border-color:var(--acc2);background:rgba(255,77,94,0.08)'; }
+    else                    { vEl.textContent = '= Equal NRR';   vEl.style.cssText = 'color:var(--acc3);border-color:var(--acc3);background:rgba(255,215,64,0.08)'; }
+
+    document.getElementById('s-rs-a').textContent  = rsA;
+    document.getElementById('s-of-a').textContent  = fmtOvers(ofA) + (aoA ? ' ★' : '');
+    document.getElementById('s-rpo-a').textContent = pl(rpoAs);
+    document.getElementById('s-rs-b').textContent  = rsB;
+    document.getElementById('s-of-b').textContent  = fmtOvers(ofB) + (aoB ? ' ★' : '');
+    document.getElementById('s-rpo-b').textContent = pl(rpoAc);
+
+    cv('c-rpo-a',  sf(rpoAs), nc(rpoAs));
+    cv('c-rpo-ab', sf(rpoAc), nc(rpoAc));
+    cv('c-nrr-a',  sf(nrrA),  nc(nrrA));
+    cv('c-rpo-b',  sf(rpoAc), nc(rpoAc));
+    cv('c-rpo-ba', sf(rpoAs), nc(rpoAs));
+    cv('c-nrr-b',  sf(nrrB),  nc(nrrB));
+
+    const aon = (aoA || aoB) ? `<br><span style="font-size:10px;color:var(--acc2)">★ All out — full quota overs (${quota}) used</span>` : '';
+    document.getElementById('fbox').innerHTML = `
+      <strong>Formula:</strong> NRR = (Runs Scored ÷ Overs Faced) − (Runs Conceded ÷ Overs Bowled)
+      <div class="feq">
+        Team A NRR = (${rsA} ÷ ${fmtOvers(ofA)}) − (${rsB} ÷ ${fmtOvers(ofB)})<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= ${pl(rpoAs)} − ${pl(rpoAc)}<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <strong style="color:${col(nrrA)}">${sf(nrrA)}</strong>
+      </div>${aon}`;
+
+    const sec = document.getElementById('result');
+    sec.style.display = 'block';
+    setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
+
+  // ── RESET ──
+  function resetAll() {
+    ['rs-a','of-a','rs-b','of-b'].forEach(id => {
+      const e = document.getElementById(id);
+      e.value = ''; e.classList.remove('dis');
+      e.style.borderColor = ''; e.style.boxShadow = '';
+    });
+    ['note-a','note-b'].forEach(id => { document.getElementById(id).style.display = 'none'; });
+    ['ao-a','ao-b'].forEach(id => { document.getElementById(id).classList.remove('on'); });
+    aoA = false; aoB = false;
+    document.getElementById('result').style.display = 'none';
+    hideErr();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ── INIT: set max attribute on overs inputs ──
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('of-a').setAttribute('max', quota);
+    document.getElementById('of-b').setAttribute('max', quota);
+  });
+</script>
+</body>
+</html>
